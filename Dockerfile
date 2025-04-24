@@ -1,26 +1,27 @@
-# Stage 1: Build
+# Stage 1: Build the application
 FROM maven:3-eclipse-temurin-17 AS build
+
+# Set working directory inside the container
 WORKDIR /app
 
-# Copy pom.xml first to leverage caching
+# Copy the Maven project files
 COPY pom.xml .
-RUN mvn dependency:go-offline
-
-# Now copy the source code
 COPY src ./src
 
-# Build the project
+# Build the application
 RUN mvn clean package -DskipTests
 
-# Stage 2: Run
+# Stage 2: Run the application
 FROM eclipse-temurin:17-alpine
+
+# Set working directory in runtime container
 WORKDIR /app
 
-# Copy the jar from the build stage
+# Copy the built JAR from the build stage
 COPY --from=build /app/target/DogManagementSystem-0.0.1-SNAPSHOT.jar app.jar
 
-# Expose port
+# Expose the application port
 EXPOSE 8080
 
-# Run the app
+# Start the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
