@@ -14,38 +14,44 @@ import com.MyProject.DogManagementSystem.repository.TrainerRepository;
 @Controller
 public class DogController {
 
-    // Using a single shared ModelAndView is not thread-safe; creating a new instance for each method is better.
     @Autowired
     DogRepository dogRepo;
+    
     @Autowired
     TrainerRepository trainerRepo;
 
-    @RequestMapping("dogHome")
+    @RequestMapping("/")
     public ModelAndView home() {
         ModelAndView mv = new ModelAndView("home");
         return mv;
     }
 
-    @RequestMapping("add")
+    @RequestMapping("/dogHome")
+    public ModelAndView dogHome() {
+        ModelAndView mv = new ModelAndView("home");
+        return mv;
+    }
+
+    @RequestMapping("/add")
     public ModelAndView add() {
-        ModelAndView mv = new ModelAndView("addNewDog.html");
+        ModelAndView mv = new ModelAndView("addNewDog");
         Iterable<Trainer> trainerList = trainerRepo.findAll();
         mv.addObject("trainers", trainerList);
         return mv;
     }
 
-    @RequestMapping("addNewDog")
+    @RequestMapping("/addNewDog")
     public ModelAndView addNewDog(Dog dog, @RequestParam("trainerId") int id) {
         Trainer trainer = trainerRepo.findById(id).orElse(null);
         if (trainer != null) {
             dog.setTrainer(trainer);
             dogRepo.save(dog);
         }
-        ModelAndView mv = new ModelAndView("home");
+        ModelAndView mv = new ModelAndView("redirect:/dogHome");
         return mv;
     }
 
-    @RequestMapping("viewModifyDelete")
+    @RequestMapping("/viewModifyDelete")
     public ModelAndView viewDogs() {
         ModelAndView mv = new ModelAndView("viewDogs");
         Iterable<Dog> dogList = dogRepo.findAll();
@@ -53,46 +59,47 @@ public class DogController {
         return mv;
     }
 
-    @RequestMapping("editDog")
+    @RequestMapping("/editDog")
     public ModelAndView editDog(Dog dog) {
         dogRepo.save(dog);
         ModelAndView mv = new ModelAndView("editDog");
+        mv.addObject("message", "Dog updated successfully!");
         return mv;
     }
 
-    @RequestMapping("deleteDog")
+    @RequestMapping("/deleteDog")
     public ModelAndView deleteDog(@RequestParam("id") int id) {
         Dog dog = dogRepo.findById(id).orElse(null);
         if (dog != null) {
             dogRepo.delete(dog);
         }
-        return home();
+        return new ModelAndView("redirect:/viewModifyDelete");
     }
 
-    @RequestMapping("search")
+    @RequestMapping("/search")
     public ModelAndView searchById(@RequestParam("id") int id) {
         ModelAndView mv = new ModelAndView();
         Dog dogFound = dogRepo.findById(id).orElse(null);
         if (dogFound != null) {
             mv.addObject("dog", dogFound);
-            mv.setViewName("searchresults");
+            mv.setViewName("searchResults");
         } else {
             mv.addObject("message", "Dog not found!");
-            mv.setViewName("error"); // Use an error view or display a friendly message on the home page.
+            mv.setViewName("error");
         }
         return mv;
     }
 
-    @RequestMapping("addTrainer")
+    @RequestMapping("/addTrainer")
     public ModelAndView addTrainer() {
-        ModelAndView mv = new ModelAndView("addNewTrainer.html");
+        ModelAndView mv = new ModelAndView("addNewTrainer");
         return mv;
     }
 
-    @RequestMapping("trainerAdded")
+    @RequestMapping("/trainerAdded")
     public ModelAndView addNewTrainer(Trainer trainer) {
         trainerRepo.save(trainer);
-        ModelAndView mv = new ModelAndView("home");
+        ModelAndView mv = new ModelAndView("redirect:/dogHome");
         return mv;
     }
 }
