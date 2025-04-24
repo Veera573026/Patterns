@@ -2,7 +2,8 @@ package com.MyProject.DogManagementSystem.Controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.MyProject.DogManagementSystem.Models.Dog;
@@ -14,76 +15,72 @@ import com.MyProject.DogManagementSystem.repository.TrainerRepository;
 public class DogController {
 
     @Autowired
-    private DogRepository dogRepo;
+    DogRepository dogRepo;
 
     @Autowired
-    private TrainerRepository trainerRepo;
+    TrainerRepository trainerRepo;
 
-    @GetMapping("/dogHome")
+    @RequestMapping("/")
+    public ModelAndView index() {
+        return new ModelAndView("redirect:/dogHome");
+    }
+
+    @RequestMapping("/dogHome")
     public ModelAndView home() {
         return new ModelAndView("home");
     }
 
-    @GetMapping("/add")
-    public ModelAndView addDogForm() {
+    @RequestMapping("/add")
+    public ModelAndView add() {
         ModelAndView mv = new ModelAndView("addNewDog");
         mv.addObject("trainers", trainerRepo.findAll());
-        mv.addObject("dog", new Dog()); // important for form binding
         return mv;
     }
 
-    @PostMapping("/addNewDog")
-    public ModelAndView addNewDog(@ModelAttribute Dog dog, @RequestParam("trainerId") int id) {
-        Trainer trainer = trainerRepo.findById(id).orElse(null);
-        if (trainer != null) {
-            dog.setTrainer(trainer);
-            dogRepo.save(dog);
-        }
+    @RequestMapping("/addNewDog")
+    public ModelAndView addNewDog(Dog dog, @RequestParam("trainerId") int id) {
+        Trainer trainer = trainerRepo.findById(id).orElse(new Trainer());
+        dog.setTrainer(trainer);
+        dogRepo.save(dog);
         return new ModelAndView("redirect:/dogHome");
     }
 
-    @GetMapping("/viewModifyDelete")
+    @RequestMapping("/addTrainer")
+    public ModelAndView addTrainer() {
+        return new ModelAndView("addNewTrainer");
+    }
+
+    @RequestMapping("/trainerAdded")
+    public ModelAndView addNewTrainer(Trainer trainer) {
+        trainerRepo.save(trainer);
+        return new ModelAndView("redirect:/dogHome");
+    }
+
+    @RequestMapping("/viewModifyDelete")
     public ModelAndView viewDogs() {
         ModelAndView mv = new ModelAndView("viewDogs");
         mv.addObject("dogs", dogRepo.findAll());
         return mv;
     }
 
-    @PostMapping("/editDog")
-    public ModelAndView editDog(@ModelAttribute Dog dog) {
+    @RequestMapping("/editDog")
+    public ModelAndView editDog(Dog dog) {
         dogRepo.save(dog);
         return new ModelAndView("redirect:/viewModifyDelete");
     }
 
-    @GetMapping("/deleteDog")
+    @RequestMapping("/deleteDog")
     public ModelAndView deleteDog(@RequestParam("id") int id) {
-        dogRepo.findById(id).ifPresent(dogRepo::delete);
+        Dog dog = dogRepo.findById(id).orElse(null);
+        if (dog != null) dogRepo.delete(dog);
         return new ModelAndView("redirect:/viewModifyDelete");
     }
 
-    @GetMapping("/search")
+    @RequestMapping("/search")
     public ModelAndView searchById(@RequestParam("id") int id) {
-        ModelAndView mv = new ModelAndView();
-        Dog dog = dogRepo.findById(id).orElse(null);
-        if (dog != null) {
-            mv.setViewName("searchresults");
-            mv.addObject("dog", dog);
-        } else {
-            mv.setViewName("error");
-            mv.addObject("message", "Dog not found!");
-        }
+        ModelAndView mv = new ModelAndView("searchResults");
+        Dog dogFound = dogRepo.findById(id).orElse(new Dog());
+        mv.addObject("dog", dogFound);
         return mv;
-    }
-
-    @GetMapping("/addTrainer")
-    public ModelAndView addTrainerForm() {
-        return new ModelAndView("addNewTrainer")
-            .addObject("trainer", new Trainer()); // for form binding
-    }
-
-    @PostMapping("/trainerAdded")
-    public ModelAndView addNewTrainer(@ModelAttribute Trainer trainer) {
-        trainerRepo.save(trainer);
-        return new ModelAndView("redirect:/dogHome");
     }
 }
