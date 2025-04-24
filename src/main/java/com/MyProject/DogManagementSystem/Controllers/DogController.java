@@ -20,48 +20,48 @@ public class DogController {
     @Autowired
     private TrainerRepository trainerRepo;
 
-    @RequestMapping("dogHome")
+    @RequestMapping("/dogHome")
     public ModelAndView home() {
         return new ModelAndView("home");
     }
 
-    @RequestMapping("add")
+    @RequestMapping("/add")
     public ModelAndView add() {
-        ModelAndView mv = new ModelAndView("addNewDog.html");
+        ModelAndView mv = new ModelAndView("addNewDog");
         mv.addObject("trainers", trainerRepo.findAll());
         return mv;
     }
 
-    @RequestMapping("addNewDog")
+    @RequestMapping("/addNewDog")
     public ModelAndView addNewDog(Dog dog, @RequestParam("trainerId") int id) {
         Trainer trainer = trainerRepo.findById(id).orElse(null);
         if (trainer != null) {
             dog.setTrainer(trainer);
             dogRepo.save(dog);
         }
-        return new ModelAndView("home");
+        return new ModelAndView("redirect:/dogHome");
     }
 
-    @RequestMapping("viewModifyDelete")
+    @RequestMapping("/viewModifyDelete")
     public ModelAndView viewDogs() {
         ModelAndView mv = new ModelAndView("viewDogs");
         mv.addObject("dogs", dogRepo.findAll());
         return mv;
     }
 
-    @RequestMapping("editDog")
+    @RequestMapping("/editDog")
     public ModelAndView editDog(Dog dog) {
         dogRepo.save(dog);
-        return new ModelAndView("editDog");
+        return new ModelAndView("redirect:/viewModifyDelete");
     }
 
-    @RequestMapping("deleteDog")
+    @RequestMapping("/deleteDog")
     public ModelAndView deleteDog(@RequestParam("id") int id) {
         dogRepo.findById(id).ifPresent(dogRepo::delete);
-        return home();
+        return new ModelAndView("redirect:/viewModifyDelete");
     }
 
-    @RequestMapping("search")
+    @RequestMapping("/search")
     public ModelAndView searchById(@RequestParam("id") int id) {
         ModelAndView mv = new ModelAndView();
         Dog dog = dogRepo.findById(id).orElse(null);
@@ -75,14 +75,14 @@ public class DogController {
         return mv;
     }
 
-    @RequestMapping("addTrainer")
+    @RequestMapping("/addTrainer")
     public ModelAndView addTrainer() {
-        return new ModelAndView("addNewTrainer.html");
+        return new ModelAndView("addNewTrainer");
     }
 
-    @RequestMapping("trainerAdded")
+    @RequestMapping("/trainerAdded")
     public ModelAndView addNewTrainer(Trainer trainer) {
         trainerRepo.save(trainer);
-        return new ModelAndView("home");
+        return new ModelAndView("redirect:/dogHome");
     }
 }
