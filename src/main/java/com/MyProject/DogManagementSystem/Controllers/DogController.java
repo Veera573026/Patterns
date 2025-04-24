@@ -14,73 +14,85 @@ import com.MyProject.DogManagementSystem.repository.TrainerRepository;
 @Controller
 public class DogController {
 
+    // Using a single shared ModelAndView is not thread-safe; creating a new instance for each method is better.
     @Autowired
     DogRepository dogRepo;
-
     @Autowired
     TrainerRepository trainerRepo;
 
-    @RequestMapping("/")
-    public ModelAndView index() {
-        return new ModelAndView("redirect:/dogHome");
-    }
-
-    @RequestMapping("/dogHome")
+    @RequestMapping("dogHome")
     public ModelAndView home() {
-        return new ModelAndView("home");
-    }
-
-    @RequestMapping("/add")
-    public ModelAndView add() {
-        ModelAndView mv = new ModelAndView("addNewDog");
-        mv.addObject("trainers", trainerRepo.findAll());
+        ModelAndView mv = new ModelAndView("home");
         return mv;
     }
 
-    @RequestMapping("/addNewDog")
+    @RequestMapping("add")
+    public ModelAndView add() {
+        ModelAndView mv = new ModelAndView("addNewDog.html");
+        Iterable<Trainer> trainerList = trainerRepo.findAll();
+        mv.addObject("trainers", trainerList);
+        return mv;
+    }
+
+    @RequestMapping("addNewDog")
     public ModelAndView addNewDog(Dog dog, @RequestParam("trainerId") int id) {
-        Trainer trainer = trainerRepo.findById(id).orElse(new Trainer());
-        dog.setTrainer(trainer);
-        dogRepo.save(dog);
-        return new ModelAndView("redirect:/dogHome");
+        Trainer trainer = trainerRepo.findById(id).orElse(null);
+        if (trainer != null) {
+            dog.setTrainer(trainer);
+            dogRepo.save(dog);
+        }
+        ModelAndView mv = new ModelAndView("home");
+        return mv;
     }
 
-    @RequestMapping("/addTrainer")
-    public ModelAndView addTrainer() {
-        return new ModelAndView("addNewTrainer");
-    }
-
-    @RequestMapping("/trainerAdded")
-    public ModelAndView addNewTrainer(Trainer trainer) {
-        trainerRepo.save(trainer);
-        return new ModelAndView("redirect:/dogHome");
-    }
-
-    @RequestMapping("/viewModifyDelete")
+    @RequestMapping("viewModifyDelete")
     public ModelAndView viewDogs() {
         ModelAndView mv = new ModelAndView("viewDogs");
-        mv.addObject("dogs", dogRepo.findAll());
+        Iterable<Dog> dogList = dogRepo.findAll();
+        mv.addObject("dogs", dogList);
         return mv;
     }
 
-    @RequestMapping("/editDog")
+    @RequestMapping("editDog")
     public ModelAndView editDog(Dog dog) {
         dogRepo.save(dog);
-        return new ModelAndView("redirect:/viewModifyDelete");
+        ModelAndView mv = new ModelAndView("editDog");
+        return mv;
     }
 
-    @RequestMapping("/deleteDog")
+    @RequestMapping("deleteDog")
     public ModelAndView deleteDog(@RequestParam("id") int id) {
         Dog dog = dogRepo.findById(id).orElse(null);
-        if (dog != null) dogRepo.delete(dog);
-        return new ModelAndView("redirect:/viewModifyDelete");
+        if (dog != null) {
+            dogRepo.delete(dog);
+        }
+        return home();
     }
 
-    @RequestMapping("/search")
+    @RequestMapping("search")
     public ModelAndView searchById(@RequestParam("id") int id) {
-        ModelAndView mv = new ModelAndView("searchResults");
-        Dog dogFound = dogRepo.findById(id).orElse(new Dog());
-        mv.addObject("dog", dogFound);
+        ModelAndView mv = new ModelAndView();
+        Dog dogFound = dogRepo.findById(id).orElse(null);
+        if (dogFound != null) {
+            mv.addObject("dog", dogFound);
+            mv.setViewName("searchresults");
+        } else {
+            mv.addObject("message", "Dog not found!");
+            mv.setViewName("error"); // Use an error view or display a friendly message on the home page.
+        }
+        return mv;
+    }
+
+    @RequestMapping("addTrainer")
+    public ModelAndView addTrainer() {
+        ModelAndView mv = new ModelAndView("addNewTrainer.html");
+        return mv;
+    }
+
+    @RequestMapping("trainerAdded")
+    public ModelAndView addNewTrainer(Trainer trainer) {
+        trainerRepo.save(trainer);
+        ModelAndView mv = new ModelAndView("home");
         return mv;
     }
 }
